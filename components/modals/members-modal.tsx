@@ -50,6 +50,27 @@ export const MembersModal = () => {
 
   const { onOpen, isOpen, onClose, type, data } = useModal();
 
+  const onKick = async (memberId: string) => {
+    try {
+      setLoadingId(memberId);
+      const url = qs.stringifyUrl({
+        url: `/api/members/${memberId}`,
+        query: {
+          serverId: server.id,
+        },
+      });
+      const response = await fetch(url, { method: "DELETE" });
+      const res = await response.json();
+      console.log(res);
+      router.refresh();
+      onOpen("members", { server: res });
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoadingId("");
+    }
+  };
+
   const onRoleChange = async (memberId: string, role: MemberRole) => {
     try {
       setLoadingId(memberId);
@@ -57,7 +78,6 @@ export const MembersModal = () => {
         url: `/api/members/${memberId}`,
         query: {
           serverId: server.id,
-          memberId,
         },
       });
 
@@ -66,9 +86,10 @@ export const MembersModal = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(role),
+        body: JSON.stringify({ role }),
       });
       const res = await response.json();
+      console.log(res);
       router.refresh();
       onOpen("members", { server: res });
     } catch (error) {
@@ -97,7 +118,7 @@ export const MembersModal = () => {
             <div key={member.id} className='flex items-center gap-x-2 mb-6'>
               <UserAvatar src={member.profile.imageUrl} />
               <div className='flex flex-col gap-y-1'>
-                <div className='text-xs font-semibold flex items-center gap-x-1'>
+                <div className='text-xs font-semibold flex items-center w-[120px] justify-between'>
                   {member.profile.name}
                   {roleIconMap[member.role]}
                 </div>
@@ -124,24 +145,29 @@ export const MembersModal = () => {
                               <Shield className='h-4 w-4 mr-2' />
                               Guest
                               {member.role === "GUEST" ? (
-                                <Check className='h-4 w-4 ml-auto' />
+                                <Check className='h-4 w-4 ml-2' />
                               ) : null}
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => onRoleChange(member.id, "GUEST")}
+                              onClick={() =>
+                                onRoleChange(member.id, "MODERATOR")
+                              }
                             >
                               <Shield className='h-4 w-4 mr-2' />
                               Moderator
                               {member.role === "MODERATOR" ? (
-                                <Check className='h-4 w-4 ml-auto' />
+                                <Check className='h-4 w-4 ml-2' />
                               ) : null}
                             </DropdownMenuItem>
                           </DropdownMenuSubContent>
                         </DropdownMenuPortal>
                       </DropdownMenuSub>
                       <DropdownMenuSeparator>
-                        <DropdownMenuItem>
-                          <Gavel className='w-4 h-4 mr-2' />
+                        <DropdownMenuItem
+                          onClick={() => onKick(member.id)}
+                          className='pl-3'
+                        >
+                          <Gavel className='w-4 h-4  mr-2' />
                           Kick
                         </DropdownMenuItem>
                       </DropdownMenuSeparator>

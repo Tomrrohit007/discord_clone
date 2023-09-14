@@ -2,6 +2,7 @@ import { currentProfile } from "@/lib/current-profile";
 import { db } from "@/lib/db";
 import { redirectToSignIn } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
+import { v4 as uuidv4 } from "uuid";
 
 type InviteCodeProps = {
   params: {
@@ -31,11 +32,22 @@ const InviteCodePage = async ({ params }: InviteCodeProps) => {
   if (existingServer) {
     return redirect(`/servers/${existingServer.id}`);
   }
+
+  const serverExist = await db.server.findFirst({
+    where: {
+      inviteCode: params.inviteCode,
+    },
+  });
+
+  if (!serverExist) {
+    return redirect("/not-found");
+  }
   const server = await db.server.update({
     where: {
       inviteCode: params.inviteCode,
     },
     data: {
+      inviteCode: uuidv4(),
       members: {
         create: [
           {
@@ -47,8 +59,9 @@ const InviteCodePage = async ({ params }: InviteCodeProps) => {
   });
 
   if (server) {
-    return redirect(`servers/${server.id}`);
+    return redirect(`/servers/${server.id}`);
   }
+
   return null;
 };
 
